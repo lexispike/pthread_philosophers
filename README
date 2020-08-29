@@ -1,0 +1,364 @@
+Multithreaded Solution to Dijkstra's Philosopher's Problem
+
+Alyxandra Spikerman
+Written for a course at Northeastern University: High Performance Computing
+
+Q1.cpp
+
+Overview:
+
+This program takes in a number of philosophers and allows each philosopher to eat if they have two forks in hand, else the philosopher thinks. It is a threaded program that represents philosophers with threads and forks with mutex locks. The output is controlled with semaphores.
+
+Detailed description: 
+
+For my solution, I decided to use mutex locks as forks and protect the output with semaphores. Each philosopher is represented as a single thread and has its own semaphore. Each philosopher also corresponds to a lock (i.e.5 philosophers = 5 locks). For my algorithm, I have a while loop that will run until all the philosophers are done (they have each thought and eaten at least once). In the while loop, I use trylock when locking the mutexes. I first call it on the left fork and if that succeeds, call it on the right fork. Then, the philosopher eats and and sleeps for 1 second. If either of the trylocks fail, the philosopher will think instead. After either they eat or sleep, they wait for one second before going through the loop again. This is to assure the first or second philosophers do not always get to be eating (as I found issue with that while testing).
+
+Odd vs Even Philosophers:
+
+I tested first with only odd numbers greater than or equal to 3. I went through multipleiterations of my code to get to a point where I could go up to 21 philosophers withoutstalling or outputting weird data. The key to this was checking if all the philosopherswere done in my print function before calling sem_wait and in my threaded function(let_them_eat), waiting for a second before calling sem_post on the next semaphore. Ikept getting into a weird state where all the philosophers were done but each threadchecked at a different time, so some threads were getting blocked at sem_wait withoutany way of getting out of it. After making these changes, my solution works for all oddnumbers between 3 and 21. Then, I tried with even numbers and had no issues with mysolution for even numbers between 2 and 20. In theory, there shouldn’t be an issue withwhether there are an odd or even number of threads with my solution because the codedoesn’t rely on the threads being even or odd.
+
+
+--HOW TO COMPILE--
+g++ -lpthread -std=c++11 Q1.cpp -o noodles
+
+OR
+
+make noodles
+
+--HOW TO RUN--
+./noodles <philosophers>
+
+--EX OUTPUT--
+
+
+[spikerman.a@c2133 ~]$ ./noodles 5
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has right fork: 0
+- has left fork: 4
+
+Philosopher 1 thinking
+- waiting for right fork: 1
+- waiting for left fork: 0
+
+Philosopher 2 eating
+- has right fork: 2
+- has left fork: 1
+
+Philosopher 3 thinking
+- waiting for right fork: 3
+- waiting for left fork: 2
+
+Philosopher 4 thinking
+- waiting for right fork: 4
+- waiting for left fork: 3
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for right fork: 0
+- waiting for left fork: 4
+
+Philosopher 1 eating
+- has right fork: 1
+- has left fork: 0
+
+Philosopher 2 thinking
+- waiting for right fork: 2
+- waiting for left fork: 1
+
+Philosopher 3 eating
+- has right fork: 3
+- has left fork: 2
+
+Philosopher 4 thinking
+- waiting for right fork: 4
+- waiting for left fork: 3
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has right fork: 0
+- has left fork: 4
+
+Philosopher 1 thinking
+- waiting for right fork: 1
+- waiting for left fork: 0
+
+Philosopher 2 eating
+- has right fork: 2
+- has left fork: 1
+
+Philosopher 3 thinking
+- waiting for right fork: 3
+- waiting for left fork: 2
+
+Philosopher 4 thinking
+- waiting for right fork: 4
+- waiting for left fork: 3
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has right fork: 0
+- has left fork: 4
+
+Philosopher 1 thinking
+- waiting for right fork: 1
+- waiting for left fork: 0
+
+Philosopher 2 thinking
+- waiting for right fork: 2
+- waiting for left fork: 1
+
+Philosopher 3 eating
+- has right fork: 3
+- has left fork: 2
+
+Philosopher 4 thinking
+- waiting for right fork: 4
+- waiting for left fork: 3
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for right fork: 0
+- waiting for left fork: 4
+
+Philosopher 1 eating
+- has right fork: 1
+- has left fork: 0
+
+Philosopher 2 thinking
+- waiting for right fork: 2
+- waiting for left fork: 1
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+
+Q1_priority.cpp
+
+This program takes in a number of philosophers and allows each philosopher to eat if they have two forks in hand, else the philosopher thinks. It is a threaded program that represents philosophers with threads and forks with mutex locks. The output is controlled with semaphores. The first philosopher is given scheduling priority and the mutexes are intialized with this in mind.
+
+If we give one philosopher priority over the rest, the philosopher will either get priority over the mutex or just eat more often. When a thread is given scheduling priority and the mutexes are initialized with an attribute that tells them to follow thread priority, the mutex will allow that thread to take the mutex if it is available before any other thread. This program shows that the prioritized thread (thread 1) eats more often than the other threads. It cannot always have the mutexes or else the last philosopher would never eat.
+
+
+--HOW TO COMPILE--
+g++ -lpthread -std=c++11 Q1_priority.cpp -o priority_noodles
+
+OR
+
+make priority_noodles
+
+--HOW TO RUN--
+./priority_noodles <philosophers>
+
+--EX OUTPUT--
+
+[spikerman.a@c2130 ~]$ ./priority_noodles 3
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has left fork: 2
+- has right fork: 0
+
+Philosopher 1 thinking
+- waiting for left fork: 0
+- waiting for right fork: 1
+
+Philosopher 2 thinking
+- waiting for left fork: 1
+- waiting for right fork: 2
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for left fork: 2
+- waiting for right fork: 0
+
+Philosopher 1 eating
+- has left fork: 0
+- has right fork: 1
+
+Philosopher 2 thinking
+- waiting for left fork: 1
+- waiting for right fork: 2
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for left fork: 2
+- waiting for right fork: 0
+
+Philosopher 1 thinking
+- waiting for left fork: 0
+- waiting for right fork: 1
+
+Philosopher 2 thinking
+- waiting for left fork: 1
+- waiting for right fork: 2
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has left fork: 2
+- has right fork: 0
+
+Philosopher 1 thinking
+- waiting for left fork: 0
+- waiting for right fork: 1
+
+Philosopher 2 eating
+- has left fork: 1
+- has right fork: 2
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+
+Q1_extra_fork.cpp
+
+This program takes in a number of philosophers and allows each philosopher to eat if they have two forks in hand, else the philosopher thinks. It is a threaded program that represents philosophers with threads and forks with mutex locks. The output is controlled with semaphores. There is an extra fork in the middle of the table for this implementation, which any philosopher can grab and use if it's open.
+
+
+--HOW TO COMPILE--
+g++ -lpthread -std=c++11 Q1_extra_fork.cpp -o extra_fork_noodles
+
+OR
+
+make extra_fork_noodles
+
+--HOW TO RUN--
+./extra_fork_noodles <philosophers>
+
+--EX OUTPUT--
+
+[spikerman.a@c2130 ~]$ ./extra_fork_noodles 5
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has fork: left
+- has fork: right
+
+Philosopher 1 eating
+- has fork: right
+- has fork: middle
+
+Philosopher 2 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 3 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 4 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 1 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 2 eating
+- has fork: left
+- has fork: right
+
+Philosopher 3 eating
+- has fork: right
+- has fork: middle
+
+Philosopher 4 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 1 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 2 eating
+- has fork: left
+- has fork: right
+
+Philosopher 3 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+Philosopher 4 eating
+- has fork: left
+- has fork: right
+
+
+
+-----TABLE STATE-----
+
+Philosopher 0 eating
+- has fork: right
+- has fork: middle
+
+Philosopher 1 thinking
+- waiting for middle fork OR
+- waiting for fork: left
+- waiting for fork: right
+
+
+
+
+--RESOURCES USED--
+- https://www.bogotobogo.com/cplusplus/multithreading_pthread.php
+- In class pthread examples
+- https://docs.oracle.com/cd/E19455-01/806-5257/attrib-16/index.html
+- https://linux.die.net/man/3/pthread_mutexattr_setprotocol
+  - "When a thread is blocking higher priority threads because of owning one
+     or more mutexes with the PTHREAD_PRIO_INHERIT protocol attribute, it shall
+     execute at the higher of its priority or the priority of the highest priority
+     thread waiting on any of the mutexes owned by this thread and initialized
+     with this protocol."
